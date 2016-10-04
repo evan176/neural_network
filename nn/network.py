@@ -154,15 +154,17 @@ class NeuralNetwork(object):
         }
 
         for i in range(len(self.layer_sizes) - 1):
+            # Initial weight
             temp = numpy.random.randn(
                 self.layer_sizes[i] + 1, self.layer_sizes[i + 1]
             )
             self.model['weights'].append(temp)
-            if self.solver in ['momentum', 'adagrad', 'rmsprop']:
-                temp = numpy.zeros(
-                    (self.layer_sizes[i] + 1, self.layer_sizes[i + 1])
-                )
-                self.model['factor1'].append(temp)
+            # Initial buffer for facto1
+            temp = numpy.zeros(
+                (self.layer_sizes[i] + 1, self.layer_sizes[i + 1])
+            )
+            self.model['factor1'].append(temp)
+            # Initial buffer for factor2
             if self.solver in ['adadelta', 'adam']:
                 temp = numpy.zeros(
                     (self.layer_sizes[i] + 1, self.layer_sizes[i + 1])
