@@ -160,9 +160,7 @@ def tanh(Z):
     Returns:
         value (numpy array): M x K, tanh value
     """
-    temp1 = numpy.exp(Z) - numpy.exp(-Z)
-    temp2 = numpy.exp(Z) + numpy.exp(-Z)
-    return numpy.divide(temp1, temp2)
+    return numpy.tanh(Z)
 
 
 def dev_tanh(Z):
