@@ -212,49 +212,40 @@ class NeuralNetwork(object):
         """
         for i in range(len(self.model['weights'])):
             if func == 'sgd':
-                w = sgd(
-                    self.model['weights'][i], gradients[i], learning_rate
-                )
-                self.model['weights'][i] = w
+                w_update = sgd(gradients[i], learning_rate)
             elif func == 'momentum':
-                w, f1 = momentum(
-                    self.model['weights'][i], gradients[i],
-                    self.model['factor1'][i], learning_rate, alpha
-                )
-                self.model['weights'][i] = w
-                self.model['factor1'][i] = f1
-            elif func == 'adagrad':
-                w, f1 = adagrad(
-                    self.model['weights'][i], gradients[i],
-                    self.model['factor1'][i], learning_rate
-                )
-                self.model['weights'][i] = w
-                self.model['factor1'][i] = f1
-            elif func == 'rmsprop':
-                w, f1 = rmsprop(
-                    self.model['weights'][i], gradients[i],
-                    self.model['factor1'][i], learning_rate, alpha
-                )
-                self.model['weights'][i] = w
-                self.model['factor1'][i] = f1
-            elif func == 'adadelta':
-                w, f1, f2 = adadelta(
-                    self.model['weights'][i], gradients[i],
-                    self.model['factor1'][i], self.model['factor2'][i],
+                w_update, f1 = momentum(
+                    gradients[i], self.model['factor1'][i],
                     learning_rate, alpha
                 )
-                self.model['weights'][i] = w
+                self.model['factor1'][i] = f1
+            elif func == 'adagrad':
+                w_update, f1 = adagrad(
+                    gradients[i], self.model['factor1'][i], learning_rate
+                )
+                self.model['factor1'][i] = f1
+            elif func == 'rmsprop':
+                w_update, f1 = rmsprop(
+                    gradients[i], self.model['factor1'][i],
+                    learning_rate, alpha
+                )
+                self.model['factor1'][i] = f1
+            elif func == 'adadelta':
+                w_update, f1, f2 = adadelta(
+                    gradients[i], self.model['factor1'][i],
+                    self.model['factor2'][i], learning_rate, alpha
+                )
                 self.model['factor1'][i] = f1
                 self.model['factor2'][i] = f2
             else:
-                w, f1, f2 = adam(
-                    self.model['weights'][i], gradients[i],
-                    self.model['factor1'][i], self.model['factor2'][i],
-                    learning_rate, alpha, beta
+                w_update, f1, f2 = adam(
+                    gradients[i], self.model['factor1'][i],
+                    self.model['factor2'][i], learning_rate, alpha, beta
                 )
-                self.model['weights'][i] = w
                 self.model['factor1'][i] = f1
                 self.model['factor2'][i] = f2
+
+            self.model['weights'][i] = self.model['weights'][i] + w_update
         return self.model
 
     def _transmit(self, x):
