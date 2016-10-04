@@ -6,7 +6,7 @@ import numpy
 e = 0.00000001
 
 
-def sgd(w, g, learning_rate):
+def sgd(g, learning_rate):
     """
     Stochastic gradient descent
 
@@ -14,17 +14,17 @@ def sgd(w, g, learning_rate):
         https://en.wikipedia.org/wiki/Stochastic_gradient_descent
 
     Args:
-        w (numpy array): M x K, weight
         g (numpy array): M x K, gradient of weight
         learning_rate (float): learning rate for descent algorithm
 
     Returns:
-        w (numpy array): M x K, updated weights
+        w_update (numpy array): M x K, weight updated amount
     """
-    return w - learning_rate * g
+    w_update = -learning_rate * g
+    return w_update
 
 
-def momentum(w, g, v, learning_rate, alpha):
+def momentum(g, v, learning_rate, alpha):
     """
     Stochastic gradient descent with momentum
 
@@ -33,66 +33,65 @@ def momentum(w, g, v, learning_rate, alpha):
     Reference: 
         http://sebastianruder.com/optimizing-gradient-descent/index.html#adagrad
     Args:
-        w (numpy array): M x K, weight
         g (numpy array): M x K, gradient of weight
         v (numpy array): M x K, velocity of previous movement
         learning_rate (float): learning rate for descent algorithm
 
     Returns:
-        w (numpy array): M x K, updated weights
+        w_update (numpy array): M x K, weight updated amount
         v (numpy array): M x K, current velocity
     """
     v = learning_rate * g + alpha * v
-    return w - v, v
+    w_update = -v
+    return w_update, v
 
 
-def adagrad(w, g, g_2, learning_rate):
+def adagrad(g, g_2, learning_rate):
     """
     Reference: 
         http://sebastianruder.com/optimizing-gradient-descent/index.html#adagrad
     Args:
-        w (numpy array): M x K, weight
         g (numpy array): M x K, gradient of weight
         g_2 (numpy array): M x K, gradient square sum
         learning_rate (float): learning rate for descent algorithm
 
     Returns:
-        w (numpy array): M x K, updated weights
+        w_update (numpy array): M x K, weight updated amount
         g_2 (numpy array): M x K, gradient square sum
     """
     g_2 = g_2 + numpy.multiply(g, g)
     temp = numpy.sqrt(g_2 + e)
     w_ = numpy.multiply(numpy.divide(learning_rate, temp), g)
-    return w - w_, g_2
+    w_update = -w_
+    return w_update, g_2
 
 
-def rmsprop(w, g, g_2, learning_rate, alpha):
+def rmsprop(g, g_2, learning_rate, alpha):
     """
     Reference: 
         http://sebastianruder.com/optimizing-gradient-descent/index.html#adagrad
     Args:
-        w (numpy array): M x K, weight
         g (numpy array): M x K, gradient of weight
         g_2 (numpy array): M x K, gradient square sum
         learning_rate (float): learning rate for descent algorithm
         alpha (float): decaying average argument
 
     Returns:
-        w (numpy array): M x K, updated weights
+        w_update (numpy array): M x K, weight updated amount
         g_2 (numpy array): M x K, gradient square sum
     """
     g_2 = alpha * g_2 + (1 - alpha) * numpy.multiply(g, g)
     temp = numpy.sqrt(g_2 + e)
     w_ = numpy.multiply(numpy.divide(learning_rate, temp), g)
-    return w - w_, g_2
+    w_update = -w_
+    return w_update, g_2
 
 
-def adadelta(w, g, g_2, w_2, learning_rate, alpha):
+def adadelta(g, g_2, w_2, learning_rate, alpha):
     """
     Reference: 
         http://sebastianruder.com/optimizing-gradient-descent/index.html#adagrad
     Args:
-        w (numpy array): M x K, weight
         g (numpy array): M x K, gradient of weight
         g_2 (numpy array): M x K, gradient square sum
         w_2 (numpy array): M x K, gradient square sum unit
@@ -100,7 +99,7 @@ def adadelta(w, g, g_2, w_2, learning_rate, alpha):
         alpha (float): decaying average argument
 
     Returns:
-        w (numpy array): M x K, updated weights
+        w_update (numpy array): M x K, weight updated amount
         g_2 (numpy array): M x K, gradient square sum
         w_2 (numpy array): M x K, gradient square sum unit
     """
@@ -109,15 +108,15 @@ def adadelta(w, g, g_2, w_2, learning_rate, alpha):
     temp2 = numpy.sqrt(g_2 + e)
     w_ = numpy.multiply(numpy.divide(temp1, temp2), g)
     w_2 = alpha * w_2 + (1 - alpha) * numpy.multiply(w_, w_)
-    return w - learning_rate * w_, g_2, w_2
+    w_update = -learning_rate * w_
+    return w_update, g_2, w_2
 
 
-def adam(w, g, m, v, learning_rate, alpha, beta):
+def adam(g, m, v, learning_rate, alpha, beta):
     """
     Reference: 
         http://sebastianruder.com/optimizing-gradient-descent/index.html#adagrad
     Args:
-        w (numpy array): M x K, weight
         g (numpy array): M x K, gradient of weight
         m (numpy array): M x K, gradient mean
         v (numpy array): M x K, gradient variance
@@ -126,7 +125,7 @@ def adam(w, g, m, v, learning_rate, alpha, beta):
         beta (float): decaying average argument of variance
 
     Returns:
-        w (numpy array): M x K, updated weights
+        w_update (numpy array): M x K, weight updated amount
         m (numpy array): M x K, gradient mean
         v (numpy array): M x K, gradient variance
     """
@@ -135,4 +134,5 @@ def adam(w, g, m, v, learning_rate, alpha, beta):
     m_ = numpy.divide(m, 1 - alpha)
     v_ = numpy.divide(v, 1 - beta)
     w_ = numpy.divide(m_, numpy.sqrt(v_) + e)
-    return w - learning_rate * w_, m, v
+    w_update = -learning_rate * w_
+    return w_update, m, v
