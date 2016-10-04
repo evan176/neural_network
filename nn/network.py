@@ -240,7 +240,7 @@ class NeuralNetwork(object):
             elif func == 'adadelta':
                 w, f1, f2 = adadelta(
                     self.model['weights'][i], gradients[i],
-                    self.model['factor1'][i], self.model['factor2'], 
+                    self.model['factor1'][i], self.model['factor2'][i],
                     learning_rate, alpha
                 )
                 self.model['weights'][i] = w
@@ -248,8 +248,8 @@ class NeuralNetwork(object):
                 self.model['factor2'][i] = f2
             else:
                 w, f1, f2 = adam(
-                    weights[i], gradients[i],
-                    self.model['factor1'][i], self.model['factor2'][i], 
+                    self.model['weights'][i], gradients[i],
+                    self.model['factor1'][i], self.model['factor2'][i],
                     learning_rate, alpha, beta
                 )
                 self.model['weights'][i] = w
