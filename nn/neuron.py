@@ -27,7 +27,7 @@ def decision(X, W, dev=False):
         return numpy.dot(X, W)
 
 
-def activation(Z, func='sigmoid', dev=False):
+def activate(Z, func='sigmoid', dev=False):
     """
 
     Args:

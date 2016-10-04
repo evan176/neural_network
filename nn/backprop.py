@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import numpy
-from .neuron import add_bias, activation, output
+from .neuron import add_bias, activate, output
 from .cost import loss
 
 
@@ -31,7 +31,7 @@ def calculate_cursis(Y, neurons_state, weights, activate_func,
         Y (numpy array): actual target value of output
         neurons_state (list): state of each layer
         weights (list): list of each layer's weight
-        activate_func (str): activation function
+        activate_func (str): activate function
                 sigmoid -> sigmoid
                 tanh -> tanh
                 relu -> relu
@@ -95,7 +95,7 @@ def compute_next_cursi(Z, cursi_up, w_up, activate_func):
         Z (numpy array): input value of given layer
         cursi_up (numpy array): cursi value of upper layer
         w_up (numpy array): weight of upper layer
-        activate_func (str): activation function
+        activate_func (str): activate function
                 sigmoid -> sigmoid
                 tanh -> tanh
                 relu -> relu
@@ -104,6 +104,6 @@ def compute_next_cursi(Z, cursi_up, w_up, activate_func):
     Returns:
         cursi (numpy array):
     """
-    dev_a = activation(Z, func=activate_func, dev=True)
+    dev_a = activate(Z, func=activate_func, dev=True)
     cursi_sum = numpy.dot(cursi_up, w_up.T)[:, :-1]
     return numpy.multiply(cursi_sum, dev_a)

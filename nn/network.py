@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import numpy
-from .neuron import decision, activation, output
+from .neuron import decision, activate, output
 from .backprop import calculate_cursis, calculate_gradient
 from optimizer import sgd, momentum, adagrad, rmsprop, adadelta, adam
 
@@ -22,21 +22,21 @@ class NeuralNetwork(object):
         layer_size (list): Dimension of each layer. It must be
                 greater than 2 because you need to provide at least
                 dimension of input & output.
-        activate_func (str): determine activation funciton
+        activation (str): determine activate funciton
                 sigmoid -> sigmoid (default)
                 tanh -> tanh
                 relu -> relu 
                 other -> no activate
-        output_func (str): determine output funciton
+        output (str): determine output funciton
                 softmax -> softmax
                 sigmoid -> sigmoid (default)
                 tanh -> tanh
                 relu -> relu
                 other -> no output
-        loss_func (str): determine loss funciton
+        loss (str): determine loss funciton
                 square -> square_loss (default)
                 cross_entropy -> cross_entropy
-        optim_func (str): determine optimization function
+        solver (str): determine optimization function
                 sqd -> stochastit gradient descent(default)
                 momentum -> momentum
                 adagrad -> adagrad
@@ -72,15 +72,15 @@ class NeuralNetwork(object):
                      )
         >>> nn.predict(test_X)
     """
-    def __init__(self, layer_sizes, activate_func='sigmoid',
-                 output_func='sigmoid', loss_func='square',
-                 optim_func='sgd', learning_rate=1, alpha=0.9,
+    def __init__(self, layer_sizes, activation='sigmoid',
+                 output='sigmoid', loss='square',
+                 solver='sgd', learning_rate=1, alpha=0.9,
                  beta=0.999, max_iter=200, batch_size=50):
         self.layer_sizes = layer_sizes
-        self.activate_func = activate_func
-        self.output_func = output_func 
-        self.loss_func = loss_func 
-        self.optim_func = optim_func
+        self.activation = activation
+        self.output = output
+        self.loss = loss
+        self.solver = solver
         self.learning_rate = learning_rate
         self.alpha = alpha
         self.beta = beta
@@ -111,9 +111,9 @@ class NeuralNetwork(object):
                 neurons_state = self._transmit(X[i:i+1])
                 cursis = calculate_cursis(
                     Y[i:i+1], neurons_state, self.model['weights'],
-                    activate_func=self.activate_func,
-                    output_func=self.output_func,
-                    loss_func=self.loss_func
+                    activate_func=self.activation,
+                    output_func=self.output,
+                    loss_func=self.loss
                 )
                 gradients = calculate_gradient(neurons_state, cursis)
                 sum_gradients, batch_counter = self._mini_batch(
@@ -158,12 +158,12 @@ class NeuralNetwork(object):
                 self.layer_sizes[i] + 1, self.layer_sizes[i + 1]
             )
             self.model['weights'].append(temp)
-            if self.optim_func in ['momentum', 'adagrad', 'rmsprop']:
+            if self.solver in ['momentum', 'adagrad', 'rmsprop']:
                 temp = numpy.zeros(
                     (self.layer_sizes[i] + 1, self.layer_sizes[i + 1])
                 )
                 self.model['factor1'].append(temp)
-            if self.optim_func in ['adadelta', 'adam']:
+            if self.solver in ['adadelta', 'adam']:
                 temp = numpy.zeros(
                     (self.layer_sizes[i] + 1, self.layer_sizes[i + 1])
                 )
@@ -175,7 +175,7 @@ class NeuralNetwork(object):
             for index, item in enumerate(sum_gradients):
                 sum_gradients[index] = item / float(self.batch_size)
             self._update_weights(
-                sum_gradients, self.optim_func,
+                sum_gradients, self.solver,
                 self.learning_rate, self.alpha, self.beta
             )
             sum_gradients = list()
@@ -197,7 +197,7 @@ class NeuralNetwork(object):
             learning_rate (float):
             alpha (float): 
             beta (float): 
-            func (str): determine activation funciton
+            func (str): determine activate funciton
                     sgd -> sgd 
                     momentum-> momentum 
                     adagrad -> adagrad
@@ -273,10 +273,10 @@ class NeuralNetwork(object):
             # Use last neuron's output as input
             z = decision(neurons_state[-1]['out'], self.model['weights'][i])
             # Activate neuron state
-            a = activation(z, self.activate_func)
+            a = activate(z, self.activation)
             neurons_state.append({'in': z, 'out': a})
         # Output layer
         z = decision(neurons_state[-1]['out'], self.model['weights'][-1])
-        o = output(z, self.output_func)
+        o = output(z, self.output)
         neurons_state.append({'in': z, 'out': o})
         return neurons_state
