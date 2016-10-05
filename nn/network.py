@@ -3,7 +3,7 @@
 import numpy
 from .neuron import decision, activate, output
 from .backprop import calculate_cursis, calculate_gradient
-from optimizer import sgd, momentum, adagrad, rmsprop, adadelta, adam
+from .optimizer import sgd, momentum, adagrad, rmsprop, adadelta, adam
 
 
 class NeuralNetwork(object):
