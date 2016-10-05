@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import numpy
-
-
-e = 0.00000001
+from .utils import safe_divide
 
 
 def sgd(g, learning_rate):
@@ -60,8 +58,8 @@ def adagrad(g, g_2, learning_rate):
         g_2 (numpy array): M x K, gradient square sum
     """
     g_2 = g_2 + numpy.multiply(g, g)
-    temp = numpy.sqrt(g_2 + e)
-    w_ = numpy.multiply(numpy.divide(learning_rate, temp), g)
+    temp = safe_divide(learning_rate, numpy.sqrt(g_2))
+    w_ = numpy.multiply(temp, g)
     w_update = -w_
     return w_update, g_2
 
@@ -81,8 +79,8 @@ def rmsprop(g, g_2, learning_rate, alpha):
         g_2 (numpy array): M x K, gradient square sum
     """
     g_2 = alpha * g_2 + (1 - alpha) * numpy.multiply(g, g)
-    temp = numpy.sqrt(g_2 + e)
-    w_ = numpy.multiply(numpy.divide(learning_rate, temp), g)
+    temp = safe_divide(learning_rate, numpy.sqrt(g_2))
+    w_ = numpy.multiply(temp, g)
     w_update = -w_
     return w_update, g_2
 
@@ -104,9 +102,9 @@ def adadelta(g, g_2, w_2, learning_rate, alpha):
         w_2 (numpy array): M x K, gradient square sum unit
     """
     g_2 = alpha * g_2 + (1 - alpha) * numpy.multiply(g, g)
-    temp1 = numpy.sqrt(w_2 + e)
-    temp2 = numpy.sqrt(g_2 + e)
-    w_ = numpy.multiply(numpy.divide(temp1, temp2), g)
+    temp1 = numpy.sqrt(w_2)
+    temp2 = numpy.sqrt(g_2)
+    w_ = numpy.multiply(safe_divide(temp1, temp2), g)
     w_2 = alpha * w_2 + (1 - alpha) * numpy.multiply(w_, w_)
     w_update = -learning_rate * w_
     return w_update, g_2, w_2
@@ -131,8 +129,8 @@ def adam(g, m, v, learning_rate, alpha, beta):
     """
     m = alpha * m + (1 - alpha) * g
     v = beta * v + (1 - beta) * numpy.multiply(g, g)
-    m_ = numpy.divide(m, 1 - alpha)
-    v_ = numpy.divide(v, 1 - beta)
-    w_ = numpy.divide(m_, numpy.sqrt(v_) + e)
+    m_ = safe_divide(m, 1 - alpha)
+    v_ = safe_divide(v, 1 - beta)
+    w_ = safe_divide(m_, numpy.sqrt(v_))
     w_update = -learning_rate * w_
     return w_update, m, v

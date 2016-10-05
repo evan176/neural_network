@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import numpy
+from .utils import safe_divide
 
 
 def decision(X, W, dev=False):
@@ -129,8 +130,7 @@ def sigmoid(Z):
     Returns:
         value (numpy array): M x K, sigmoid value
     """
-    temp = 1 + numpy.exp(-Z)
-    return numpy.divide(1.0, temp)
+    return safe_divide(1.0, 1.0 + numpy.exp(-Z))
 
 
 def dev_sigmoid(Z):
@@ -207,7 +207,7 @@ def dev_relu(Z):
     Returns:
         result (numpy array): M x K, derivative of tanh
     """
-    value = 0.0000001 * numpy.ones(Z.shape)
+    value = numpy.zeros(Z.shape)
     value[Z > 0] = 1
     return value
 
@@ -223,8 +223,8 @@ def softmax(Z):
     Returns:
         value (numpy array): M x K, softmax value
     """
-    temp = numpy.exp(Z) + 0.0000001 * numpy.ones(Z.shape)
-    return numpy.divide(temp, numpy.sum(temp))
+    temp = numpy.exp(Z)
+    return safe_divide(temp, numpy.sum(temp))
 
 
 def dev_softmax(Z):
