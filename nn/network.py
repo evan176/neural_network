@@ -89,6 +89,10 @@ class NeuralNetwork(object):
             'batch_size': batch_size
         }
 
+    @property
+    def model(self):
+        return self._model['weights']
+
     def fit(self, X, Y):
         """
 
