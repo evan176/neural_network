@@ -76,16 +76,18 @@ class NeuralNetwork(object):
                  output='sigmoid', loss='square',
                  solver='sgd', learning_rate=1, alpha=0.9,
                  beta=0.999, max_iter=200, batch_size=50):
-        self.layer_sizes = layer_sizes
-        self.activation = activation
-        self.output = output
-        self.loss = loss
-        self.solver = solver
-        self.learning_rate = learning_rate
-        self.alpha = alpha
-        self.beta = beta
-        self.max_iter = max_iter
-        self.batch_size = batch_size
+        self._params = {
+            'layer_sizes': layer_sizes,
+            'activation': activation,
+            'output': output,
+            'loss': loss,
+            'solver': solver,
+            'learning_rate': learning_rate,
+            'alpha': alpha,
+            'beta': beta,
+            'max_iter': max_iter,
+            'batch_size': batch_size
+        }
 
     def fit(self, X, Y):
         """
@@ -99,26 +101,11 @@ class NeuralNetwork(object):
 
         """
         # Initial network
-        self._init_model()
+        self._model = self._init_model()
         # Init mini batch
-        sum_gradients = list()
-        for w in self.model['weights']:
-            sum_gradients.append(numpy.zeros(w.shape))
-        batch_counter = 0
-        # Start training
-        for it in range(self.max_iter):
-            for i in range(X.shape[0]):
-                neurons_state = self._transmit(X[i:i+1])
-                cursis = calculate_cursis(
-                    Y[i:i+1], neurons_state, self.model['weights'],
-                    activate_func=self.activation,
-                    output_func=self.output,
-                    loss_func=self.loss
-                )
-                gradients = calculate_gradient(neurons_state, cursis)
-                sum_gradients, batch_counter = self._mini_batch(
-                    gradients, sum_gradients, batch_counter
-                )
+        self._model = self._train(
+            X, Y, self._model, self._params, self._params['max_iter']
+        )
 
     def predict(self, X):
         """
@@ -130,7 +117,11 @@ class NeuralNetwork(object):
             predicted (numpy array): M x K, predicted result
 
         """
-        neurons_state = self._transmit(X)
+        neurons_state = self._transmit(
+            X, self._model['weights'],
+            self._params['activation'],
+            self._params['output']
+        )
         return neurons_state[-1]['out']
 
     def _init_model(self):
@@ -147,51 +138,68 @@ class NeuralNetwork(object):
 
         Examples:
         """
-        self.model = {
+        model = {
             'weights': list(),
             'factor1': list(),
-            'factor2': list()
+            'factor2': list(),
+            'sum_gradients': list(),
+            'batch_counter': 0
         }
 
-        for i in range(len(self.layer_sizes) - 1):
+        for i in range(len(self._params['layer_sizes']) - 1):
             # Initial weight
             temp = numpy.random.randn(
-                self.layer_sizes[i] + 1, self.layer_sizes[i + 1]
+                self._params['layer_sizes'][i] + 1,
+                self._params['layer_sizes'][i + 1]
             )
-            self.model['weights'].append(temp)
+            model['weights'].append(temp)
+            model['sum_gradients'].append(numpy.zeros(temp.shape))
             # Initial buffer for facto1
-            temp = numpy.zeros(
-                (self.layer_sizes[i] + 1, self.layer_sizes[i + 1])
-            )
-            self.model['factor1'].append(temp)
+            model['factor1'].append(numpy.zeros(temp.shape))
             # Initial buffer for factor2
-            if self.solver in ['adadelta', 'adam']:
-                temp = numpy.zeros(
-                    (self.layer_sizes[i] + 1, self.layer_sizes[i + 1])
+            if self._params['solver'] in ['adadelta', 'adam']:
+                model['factor2'].append(numpy.zeros(temp.shape))
+        return model
+
+    def _train(self, X, Y, model, params, iter_num):
+        # Start training
+        for it in range(iter_num):
+            for i in range(X.shape[0]):
+                neurons_state = self._transmit(
+                    X[i:i+1], model['weights'],
+                    params['activation'],
+                    params['output']
                 )
-                self.model['factor2'].append(temp)
-        return self.model
+                cursis = calculate_cursis(
+                    Y[i:i+1], neurons_state, model['weights'],
+                    activate_func=params['activation'],
+                    output_func=params['output'],
+                    loss_func=params['loss']
+                )
+                gradients = calculate_gradient(neurons_state, cursis)
+                model = self._mini_batch(gradients, model, params)
+        return model
 
-    def _mini_batch(self, gradients, sum_gradients, batch_counter):
-        if batch_counter >= self.batch_size:
-            for index, item in enumerate(sum_gradients):
-                sum_gradients[index] = item / float(self.batch_size)
-            self._update_weights(
-                sum_gradients, self.solver,
-                self.learning_rate, self.alpha, self.beta
+    def _mini_batch(self, gradients, model, params):
+        if model['batch_counter'] >= params['batch_size']:
+            for index, item in enumerate(model['sum_gradients']):
+                model['sum_gradients'][index] = item / float(params['batch_size'])
+            model['weights'] = self._update_weights(
+                model['sum_gradients'], model['weights'],
+                model['factor1'], model['factor2'], params['solver'],
+                params['learning_rate'], params['alpha'], params['beta']
             )
-            sum_gradients = list()
-            for w in self.model['weights']:
-                sum_gradients.append(numpy.zeros(w.shape))
-            batch_counter = 0
+            for arr in model['sum_gradients']:
+                arr.fill(0.0)
+            model['batch_counter'] = 0
         else:
-            for i in range(len(sum_gradients)):
-                sum_gradients[i] += gradients[i]
-            batch_counter += 1
-        return sum_gradients, batch_counter
+            for i in range(len(gradients)):
+                model['sum_gradients'][i] += gradients[i]
+            model['batch_counter'] += 1
+        return model
 
-    def _update_weights(self, gradients, func='sgd',
-                        learning_rate=1, alpha=0.9, beta=0.1):
+    def _update_weights(self, gradients, weights, factor1, factor2,
+                        solver='sgd', learning_rate=1, alpha=0.9, beta=0.1):
         """
 
         Args:
@@ -208,47 +216,47 @@ class NeuralNetwork(object):
                     adam -> adam
 
         Returns:
-            self.model
+            model
         """
-        for i in range(len(self.model['weights'])):
-            if func == 'sgd':
+        for i in range(len(weights)):
+            if solver == 'sgd':
                 w_update = sgd(gradients[i], learning_rate)
-            elif func == 'momentum':
+            elif solver == 'momentum':
                 w_update, f1 = momentum(
-                    gradients[i], self.model['factor1'][i],
+                    gradients[i], factor1[i],
                     learning_rate, alpha
                 )
-                self.model['factor1'][i] = f1
-            elif func == 'adagrad':
+                factor1[i] = f1
+            elif solver == 'adagrad':
                 w_update, f1 = adagrad(
-                    gradients[i], self.model['factor1'][i], learning_rate
+                    gradients[i], factor1[i], learning_rate
                 )
-                self.model['factor1'][i] = f1
-            elif func == 'rmsprop':
+                factor1[i] = f1
+            elif solver == 'rmsprop':
                 w_update, f1 = rmsprop(
-                    gradients[i], self.model['factor1'][i],
+                    gradients[i], factor1[i],
                     learning_rate, alpha
                 )
-                self.model['factor1'][i] = f1
-            elif func == 'adadelta':
+                factor1[i] = f1
+            elif solver == 'adadelta':
                 w_update, f1, f2 = adadelta(
-                    gradients[i], self.model['factor1'][i],
-                    self.model['factor2'][i], learning_rate, alpha
+                    gradients[i], factor1[i],
+                    factor2[i], learning_rate, alpha
                 )
-                self.model['factor1'][i] = f1
-                self.model['factor2'][i] = f2
+                factor1[i] = f1
+                factor2[i] = f2
             else:
                 w_update, f1, f2 = adam(
-                    gradients[i], self.model['factor1'][i],
-                    self.model['factor2'][i], learning_rate, alpha, beta
+                    gradients[i], factor1[i],
+                    factor2[i], learning_rate, alpha, beta
                 )
-                self.model['factor1'][i] = f1
-                self.model['factor2'][i] = f2
+                factor1[i] = f1
+                factor2[i] = f2
 
-            self.model['weights'][i] = self.model['weights'][i] + w_update
-        return self.model
+            weights[i] = weights[i] + w_update
+        return weights
 
-    def _transmit(self, x):
+    def _transmit(self, x, weights, activate_func, output_func):
         """
 
         Args:
@@ -262,14 +270,14 @@ class NeuralNetwork(object):
         # Set x as input neuron
         neurons_state.append({'in': x, 'out': x})
         # Start transmitting
-        for i in range(len(self.model['weights']) - 1):
+        for i in range(len(weights) - 1):
             # Use last neuron's output as input
-            z = decision(neurons_state[-1]['out'], self.model['weights'][i])
+            z = decision(neurons_state[-1]['out'], weights[i])
             # Activate neuron state
-            a = activate(z, self.activation)
+            a = activate(z, activate_func)
             neurons_state.append({'in': z, 'out': a})
         # Output layer
-        z = decision(neurons_state[-1]['out'], self.model['weights'][-1])
-        o = output(z, self.output)
+        z = decision(neurons_state[-1]['out'], weights[-1])
+        o = output(z, output_func)
         neurons_state.append({'in': z, 'out': o})
         return neurons_state
