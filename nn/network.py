@@ -7,8 +7,7 @@ from .optimizer import sgd, momentum, adagrad, rmsprop, adadelta, adam
 
 
 class NeuralNetwork(object):
-    """
-    This class provides essential function for training neural network
+    """This class provides essential function for training neural network
      and predicting target with stochastic gradient descent.
 
     References:
@@ -95,7 +94,7 @@ class NeuralNetwork(object):
         return self._model['weights']
 
     def fit(self, X, Y):
-        """
+        """Fit given data.
 
         Args:
             X (numpy array): M x N, training data
@@ -113,7 +112,7 @@ class NeuralNetwork(object):
         )
 
     def iterate_fit(self, X, Y, interval):
-        """
+        """Iteratively fit given data with given interval.
 
         Args:
             X (numpy array): M x N, training data
@@ -159,9 +158,12 @@ class NeuralNetwork(object):
                     dimension of input & output.
 
         Returns:
-            None
-
-        Examples:
+            model (dict): neural network model
+                weights (list): list of each layer's weight
+                factor1 (list): buffer for storing meta information
+                factor2 (list): buffer for storing meta information
+                sum_gradients (list): summarization of gradients
+                batch_counter (int): counter for mini batch
         """
         model = {
             'weights': list(),
@@ -187,6 +189,23 @@ class NeuralNetwork(object):
         return model
 
     def _train(self, X, Y, model, params, iter_num):
+        """
+
+        Args:
+            X (numpy array):
+            Y (label):
+            model (dict): neural network model
+            params (dict):
+            iter_num (int):
+
+        Returns:
+            model (dict): neural network model
+                weights (list): list of each layer's weight
+                factor1 (list): buffer for storing meta information
+                factor2 (list): buffer for storing meta information
+                sum_gradients (list): summarization of gradients
+                batch_counter (int): counter for mini batch
+        """
         # Start training
         for it in range(iter_num):
             for i in range(X.shape[0]):
@@ -206,6 +225,21 @@ class NeuralNetwork(object):
         return model
 
     def _mini_batch(self, gradients, model, params):
+        """
+
+        Args:
+            gradients (list): list of each layer's gradient
+            model (dict): neural network model
+            params (dict):
+
+        Returns:
+            model (dict): neural network model
+                weights (list): list of each layer's weight
+                factor1 (list): buffer for storing meta information
+                factor2 (list): buffer for storing meta information
+                sum_gradients (list): summarization of gradients
+                batch_counter (int): counter for mini batch
+        """
         if model['batch_counter'] >= params['batch_size']:
             for index, item in enumerate(model['sum_gradients']):
                 model['sum_gradients'][index] = item / float(params['batch_size'])
@@ -228,20 +262,23 @@ class NeuralNetwork(object):
         """
 
         Args:
-            gradients (list):
-            learning_rate (float):
-            alpha (float): 
-            beta (float): 
-            func (str): determine activate funciton
-                    sgd -> sgd 
-                    momentum-> momentum 
+            gradients (list): list of each layer's gradient
+            weights (list): list of each layer's weight
+            factor1 (list): buffer for storing meta information
+            factor2 (list): buffer for storing meta information
+            solver (str): determine optimization function
+                    sqd -> stochastit gradient descent(default)
+                    momentum -> momentum
                     adagrad -> adagrad
                     rmsprop -> rmsprop
                     adadelta -> adadelta
                     adam -> adam
+            learning_rate (float): learning rate for descent algorithm
+            alpha (float): decaying average argument
+            beta (float): decaying average argument
 
         Returns:
-            model
+            weights (list): list of each layer's weight
         """
         for i in range(len(weights)):
             if solver == 'sgd':
@@ -286,10 +323,21 @@ class NeuralNetwork(object):
 
         Args:
             x (numpy array): 1 x N, test data
+            weights (list): list of each layer's weight
+            activate_func (str): determine activate funciton
+                    sigmoid -> sigmoid (default)
+                    tanh -> tanh
+                    relu -> relu 
+                    other -> no activate
+            output (str): determine output funciton
+                    softmax -> softmax
+                    sigmoid -> sigmoid (default)
+                    tanh -> tanh
+                    relu -> relu
+                    other -> no output
 
         Returns:
             neurons_state (list): state of each layer
-
         """
         neurons_state = list()
         # Set x as input neuron
