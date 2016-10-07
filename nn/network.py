@@ -111,6 +111,26 @@ class NeuralNetwork(object):
             X, Y, self._model, self._params, self._params['max_iter']
         )
 
+    def iterate_fit(self, X, Y, interval):
+        """
+
+        Args:
+            X (numpy array): M x N, training data
+            Y (numpy array): M x 1, target value of training data
+
+        Returns:
+            weights (list): list of each layer's weight
+        """
+        # Initial network
+        self._model = self._init_model()
+        iter_ranges = [interval] * (self._params['max_iter'] / interval)
+        iter_ranges.append(self._params['max_iter'] % interval)
+        for its in iter_ranges:
+            self._model = self._train(
+                X, Y, self._model, self._params, its
+            )
+            yield self.model
+
     def predict(self, X):
         """
 
