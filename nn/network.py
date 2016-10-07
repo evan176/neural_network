@@ -17,6 +17,7 @@ class NeuralNetwork(object):
         https://cs.stanford.edu/~quocle/tutorial1.pdf
         https://cs.stanford.edu/~quocle/tutorial2.pdf
         https://www.cs.cmu.edu/afs/cs/academic/class/15883-f15/slides/backprop.pdf
+        https://github.com/yusugomori/DeepLearning
 
     Args:
         layer_size (list): Dimension of each layer. It must be
