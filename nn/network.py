@@ -354,3 +354,137 @@ class NeuralNetwork(object):
         o = output(z, output_func)
         neurons_state.append({'in': z, 'out': o})
         return neurons_state
+
+
+class NNClassifier(NeuralNetwork):
+    """This class provides interface for classification problem.
+
+    Args:
+        hidden_layer_sizes (list): Dimension of hidden layer.
+                This class handle input & output layer.
+        activation (str): determine activate funciton
+                sigmoid -> sigmoid (default)
+                tanh -> tanh
+                relu -> relu
+                other -> no activate
+        solver (str): determine optimization function
+                sqd -> stochastit gradient descent(default)
+                momentum -> momentum
+                adagrad -> adagrad
+                rmsprop -> rmsprop
+                adadelta -> adadelta
+                adam -> adam
+        learning_rate (float): learning rate for descent algorithm
+        alpha (float): decaying average argument
+        beta (float): decaying average argument
+        max_iter (integer): maximum iteration for optimization
+        batch_size (integer): mini batch size
+
+    Returns:
+        NNClassifier object
+
+    Examples:
+        >>> nn = NNClassifier((2, 2))
+        >>> training_X = numpy.array(
+                             [[ 1,  1],
+                              [-1, -1],
+                              [ 1, -1],
+                              [-1,  1]]
+                         )
+        >>> training_Y = numpy.array(
+                             [[1],
+                              [1],
+                              [0],
+                              [0]]
+                         )
+        >>> nn.fit(training_X, training_Y)
+        >>> test_X = numpy.array(
+                         [[0.9, 0.9]]
+                     )
+        >>> nn.predict(test_X)
+    """
+    def __init__(self, hidden_layer_sizes, activation='sigmoid',
+                 solver='sgd', learning_rate=1, alpha=0.9,
+                 beta=0.999, max_iter=200, batch_size=50):
+        self._params = {
+            'layer_sizes': (),
+            'hidden_layer_sizes': hidden_layer_sizes,
+            'activation': activation,
+            'output': 'softmax',
+            'loss': 'cross_entropy',
+            'solver': solver,
+            'learning_rate': learning_rate,
+            'alpha': alpha,
+            'beta': beta,
+            'max_iter': max_iter,
+            'batch_size': batch_size
+        }
+
+    def fit(self, X, y):
+        """Fit given data.
+
+        Args:
+            X (numpy array): M x N, training data
+            Y (numpy array): M x 1, target value of training data
+
+        Returns:
+            None
+        """
+        self._get_classes(y)
+        y = self._transform_label(y)
+        layer_sizes = [X.shape[1]] + list(self._params['hidden_layer_sizes']) + [y.shape[1]]
+        self._params['layer_sizes'] = layer_sizes
+        return super(NNClassifier, self).fit(X, y)
+
+    def iterate_fit(self, X, y, interval):
+        """Iteratively fit given data with specified interval.
+
+        Args:
+            X (numpy array): M x N, training data
+            Y (numpy array): M x 1, target value of training data
+            interval (int): Interval of each iterate
+
+        Returns:
+            weights (list): list of each layer's weight
+        """
+        self._get_classes(y)
+        y = self._transform_label(y)
+        layer_sizes = [X.shape[1]] + list(self._params['hidden_layer_sizes']) + [y.shape[1]]
+        self._params['layer_sizes'] = layer_sizes
+        return super(NNClassifier, self).iterate_fit(X, y, interval)
+
+    def predict(self, x):
+        """Predict data
+
+        Args:
+            X (numpy array): M x N, test data with same dimensions
+
+        Returns:
+            predicted (numpy array): M , predicted classes
+
+        """
+        predicted = super(NNClassifier, self).predict(x)
+        y_ = list()
+        for index in numpy.argmax(predicted, axis=1):
+            y_.append(self._classes[index])
+        return numpy.array(y_)
+
+    def _get_classes(self, y):
+        self._classes = list(numpy.unique(y))
+
+    def _transform_label(self, y):
+        """Convert label with One-Hot Encoding.
+
+        References:
+            https://en.wikipedia.org/wiki/One-hot
+
+        Args:
+            y (numpy array): M x 1
+
+        Returns:
+            coded_label (numpy array): M x K, one-hot label
+        """
+        coded_label = numpy.zeros((len(y), len(self._classes)))
+        for i in range(len(y)):
+            coded_label[i, self._classes.index(y[i])] = 1
+        return coded_label
